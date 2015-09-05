@@ -1,4 +1,11 @@
+---
+declared-services:
+  text-to-speech-service-standard:
+    label: text_to_speech
+    plan: standard
 applications:
+- services:
+  - text-to-speech-service-standard
 - disk_quota: 1024M
   host: leap-of-faith
   name: leap-of-faith
