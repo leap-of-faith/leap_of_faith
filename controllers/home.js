@@ -46,5 +46,9 @@ exports.t2s = function(req, res) {
 
 exports.processImage = function(req, res) {
 	console.log("Image Process Request received.");
+	console.log(req);
+	console.log(req.files);
+	// Upload to Alchemy API
+	
 }
 

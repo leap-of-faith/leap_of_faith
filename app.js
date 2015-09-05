@@ -5,7 +5,8 @@
 /**
  * Module dependencies.
  */
-var express = require('express'),
+var server = require('http').createServer(),
+	express = require('express'),
 	compress = require('compression'),
 //	favicon = require('serve-favicon'),
 	bodyParser = require('body-parser'),
@@ -17,8 +18,11 @@ var express = require('express'),
 	assets = require('connect-assets'),
 	sass = require('node-sass'),
 	cfenv = require('cfenv'),
-	Hapi = require('hapi'),
-	Ws = require('ws');
+	WebSocketServer = require('ws').Server,
+	wss = new WebSocketServer({
+		server: server,
+		path: '/websocket'
+	});
 
 /**
  * Controllers (route handlers).
@@ -67,24 +71,45 @@ app.use(express.static(path.join(__dirname, 'public'), { maxAge: 31557600000 }))
  * https://github.com/geek/pebble-socket-example
  */
 var webSockets = [];
-var server = new Hapi.Server();
-var port = process.env.VCAP_APP_PORT || 8888;
-server.connection({
-	host: 'localhost',
-	port: port
+// var server = new Hapi.Server();
+// var port = process.env.VCAP_APP_PORT || 8888;
+// server.connection({
+// 	host: 'localhost',
+// 	port: port
+// });
+
+wss.on("open", function(ev) {
+	// ev?
+	console.log("web socket opened");
 });
 
-server.start(function () {
-	console.log("server started on port " + port);
-    var ws = new Ws.Server({ server: server.listener });
-    console.log("websocket setup");
-    ws.on('connection', function (socket) {
-    	console.log("connection made");
-        socket.send('Welcome');
-    });
+wss.on('connection', function(ws) {
+	console.log("user connected");
+	ws.on('message', function(message) {
+		console.log("Received %s", message);
+	});
 
-    webSockets.push(ws);
+	ws.send('Hi Sean');
 });
+
+// server.start(function () {
+// 	console.log("server started on port " + port);
+//     var ws = new Ws.Server({ server: server.listener });
+//     console.log("websocket setup");
+//     ws.on('open', function() {
+//     	console.log("websocket opened");
+//     });
+//     ws.on('connection', function (socket) {
+//     	console.log("connection made");
+//         socket.send('Welcome');
+//     });
+//     ws.on('message', function(socket) {
+//     	console.log("message received");
+//     	socket.send("Received Message");
+//     });
+
+//     webSockets.push(ws);
+// });
 
 /**
  * Use to transmit data to Pebble
@@ -133,10 +158,10 @@ app.use(errorHandler());
 var appEnv = cfenv.getAppEnv();
 
 // start server on the specified port and binding host
-app.listen(appEnv.port, function() {
-
+server.on('request', app);
+server.listen(appEnv.port, function() {
 	// print a message when the server starts listening
-	console.log("server starting on " + appEnv.url);
+	console.log("server starting on " + appEnv.url + ", port: " + appEnv.port, ", socket port: " + server.address().port);
 });
 
 module.exports = app;
