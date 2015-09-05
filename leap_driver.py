@@ -59,15 +59,9 @@ class SampleListener(Leap.Listener):
             as_ctype_array = ctype_array_def.from_address(int(image_buffer_ptr))
             # as numpy array
             image_array = np.ctypeslib.as_array(as_ctype_array)
-            """
-            image = image.convert("RGB")
-            if index == 0:
-                image.save("test1.png")
-                exit(0)
-            else:
-                image.save("test2.png")
-                exit(0)
-            """   
+            avg_pixel_intensity = np.mean(image_array)
+            print avg_pixel_intensity
+            scipy.misc.toimage(image_array, cmin=0.0, cmax=1.0).save('outfile.jpg')
      
         # View Policies
         controller.set_policy(Leap.Controller.POLICY_IMAGES)
