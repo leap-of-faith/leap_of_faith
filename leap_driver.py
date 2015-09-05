@@ -2,10 +2,12 @@ from PIL import Image
 import numpy as np
 import ctypes
 import scipy.misc
+import requests
 
 import Leap, sys, thread, time
 from Leap import CircleGesture, KeyTapGesture, ScreenTapGesture, SwipeGesture
 
+RANGE = 25  # 25cm max range of leap motion device
 
 class SampleListener(Leap.Listener):
     pfobj = ''
@@ -24,6 +26,11 @@ class SampleListener(Leap.Listener):
     def on_exit(self, controller):
         print "Exited"
 
+    def calc_distance(self, image_array):
+        """Returns the average distance of items in the image from the leap"""
+        return (1 - np.mean(image_array)/255) * RANGE
+
+        
     def on_frame(self, controller):
         # Get the most recent frame and report some basic information
         frame = controller.frame() 
@@ -45,8 +52,8 @@ class SampleListener(Leap.Listener):
             as_ctype_array = ctype_array_def.from_address(int(image_buffer_ptr))
             # as numpy array
             image_array = np.ctypeslib.as_array(as_ctype_array)
-            avg_pixel_intensity = np.mean(image_array)
-            print avg_pixel_intensity
+
+            print "avg: ", np.mean(image_array), ", max: ",  np.amax(image_array), ", min: ", np.amin(image_array), ", dist:", self.calc_distance(image_array)
             scipy.misc.toimage(image_array, cmin=0.0, cmax=1.0).save('outfile.jpg')
      
         # Get Images
@@ -58,18 +65,6 @@ class SampleListener(Leap.Listener):
         print "Frame id: %d, timestamp: %d, hands: %d, fingers: %d, tools: %d, gestures: %d" % (
               frame.id, frame.timestamp, len(frame.hands), len(frame.fingers), len(frame.tools), len(frame.gestures()))
 
-    def state_string(self, state):
-        if state == Leap.Gesture.STATE_START:
-            return "STATE_START"
-
-        if state == Leap.Gesture.STATE_UPDATE:
-            return "STATE_UPDATE"
-
-        if state == Leap.Gesture.STATE_STOP:
-            return "STATE_STOP"
-
-        if state == Leap.Gesture.STATE_INVALID:
-            return "STATE_INVALID"
 
 def main():
     # Create a sample listener and controller
