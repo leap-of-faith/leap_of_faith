@@ -66,7 +66,14 @@ def processImage(local_location):
 def tagToSentence(image_data):
 	text = image_data.object;
 	sentences = ['A {0} is in your proximity.',
-				 'Holy moly, is that a {0}?'];
+				 'Holy moly, is that a {0}?',
+				 'I spy a {0}.',
+				 'That looks like a positively wonderful {0}',
+				 'That would be a {0}.',
+				 'That looks like a tiger. Oh sorry, that is a {0}. My bad.',
+				 ''];
+	if(image_data.object == None):
+		sentences = ["What an incredible...thing.", "That's a thing, for sure.", "One thing. Right ahead.", "I'm not answering your questions, you locked me in this bag."]
 	index = int(round(random() * (len(sentences) - 1)))
 	return sentences[index].format(str(text));
 
