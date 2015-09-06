@@ -1,0 +1,5 @@
+
+
+exports.convertTextToSpeech(text) {
+	
+}
