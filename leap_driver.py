@@ -13,7 +13,7 @@ RANGE = 25  # 25cm max range of leap motion device
 class SampleListener(Leap.Listener):
     pfobj = ''
     _count = 0
-    _threshold = .8 * RANGE  # The point at which an object will be considered in range of the leap
+    _threshold = .95 * RANGE  # The point at which an object will be considered in range of the leap
 
     def on_init(self, controller):
         print "Initialized"
@@ -112,7 +112,7 @@ class SampleListener(Leap.Listener):
             # buzz the watch as objects come into the range of the leap
             if dist < self._threshold:
                 # buzz the watch
-                print "watch buzz: power = ", dist
+                print "watch buzz: power = ", int(dist)
 
             # if watch_button_pressed: then submit image to bluemix
             watch_button_pressed = False
