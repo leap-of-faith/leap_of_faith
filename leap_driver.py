@@ -54,8 +54,17 @@ class SampleListener(Leap.Listener):
             image_array = np.ctypeslib.as_array(as_ctype_array)
 
             print "avg: ", np.mean(image_array), ", max: ",  np.amax(image_array), ", min: ", np.amin(image_array), ", dist:", self.calc_distance(image_array)
+            # if distance < threshold: then buzz watch
+            # if watch_button_pressed: then submit image to bluemix
+            """
             scipy.misc.toimage(image_array, cmin=0.0, cmax=1.0).save('outfile.jpg')
-     
+            exit(0)
+                image = 'outfile.jpg'
+                data = open('./public/img/' + image, 'rb').read()
+                res = requests.post(url='http://leap-of-faith.mybluemix.net/processImage',
+                                    data=data,
+                                    headers={'Content-Type': 'image/jpeg'})
+            """
         # Get Images
         controller.set_policy(Leap.Controller.POLICY_IMAGES)
         #print "bg frame policy: ", Leap.Controller.POLICY_BACKGROUND_FRAMES
