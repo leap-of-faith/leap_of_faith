@@ -28,18 +28,24 @@ def process(imgURL):
 	try:
 		result = parseResult(cloud.call(imgURL))
 	except:
-		result = "Failed to identify the image."
+		result = None
 
 	return result
 
 def displayResult(result):
-	return "You're facing a " + result[0] + " with " + result[1] + " probability."
+	if result != None:
+		return "You're facing a " + result[0] + " with " + result[1] + " probability."
+	else:
+		return "Failed to identify the image"
 
 def main():
 	url = "http://kindersay.com/files/images/soccer-ball.png"
 
 	result = process(url)
+
 	print displayResult(result)
+
+	
 
 if __name__ == '__main__':
 	main()
