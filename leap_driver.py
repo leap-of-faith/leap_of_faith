@@ -8,6 +8,8 @@ from websocket import create_connection
 from upload import imageToText
 import requests
 from os import system
+import subprocess
+import re
 
 import Leap, sys, thread, time
 from Leap import CircleGesture, KeyTapGesture, ScreenTapGesture, SwipeGesture
@@ -141,10 +143,21 @@ class SampleListener(Leap.Listener):
                 self._ws.send('vibrate:%d' % int(dist))
 
             # if watch_button_pressed: then submit image to bluemix
+            #web_socket_data = "p"
+            web_socket_data = "photoL"
             #web_socket_data = self._ws.recv()
-            web_socket_data = "l"
             if "photoL" in web_socket_data:
                 print "watch button pressed!"
+                '''
+                self.undistort(image).save('public/img/fixed.jpg')
+                # Make HTTP GET request to Gyazo api
+                output = subprocess.check_output('curl -i https://upload.gyazo.com/api/upload -F "access_token=c8d43238b11963ae3033ea4a1d3af0b1de141f4d3d3116a299786b4e87eea8f1" -F "imagedata=@/home/anthony/Desktop/PennAppsF15/leap_processing/public/img/fixed.jpg"', shell=True)
+                reg = '"url":"(.*)"'
+                url = re.search(reg, str(output))
+                url_val = url.group(0)[7:-1]
+                #print "URL IS ****", url.group(0)[7:-1], "****"
+                imageToText(url_val)
+                '''
                 location = 'public/img/fixed.jpg'
                 self.undistort(image).save(location)
                 textToSay = imageToText(location)
