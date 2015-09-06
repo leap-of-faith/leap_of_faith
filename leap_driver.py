@@ -6,13 +6,14 @@ import requests
 import math
 from websocket import create_connection
 from upload import imageToText
+import requests
 
 import Leap, sys, thread, time
 from Leap import CircleGesture, KeyTapGesture, ScreenTapGesture, SwipeGesture
 
 RANGE = 25.0  # 25cm max range of leap motion device
 MAX_INTENSITY = 255.0  # max value of a pixel in a Leap Motion Frame Image
-variable = ""
+ACCESS_TOKEN = "f68dd47d90a46671e150dd2716895967897cfb89c48c214de3e6c10922d56af9"
 
 class SampleListener(Leap.Listener):
     pfobj = ''
@@ -137,9 +138,22 @@ class SampleListener(Leap.Listener):
 
             # if watch_button_pressed: then submit image to bluemix
             web_socket_data = self._ws.recv()
-            if "photo" in web_socket_data:
+            if "photoL" in web_socket_data:
                 print "watch button pressed!"
                 self.undistort(image).save('public/img/fixed.jpg')
+                # Make HTTP GET request to Gyazo api
+                try:
+                    r = requests.get('https://upload.gyazo.com/api/upload?access_token=%s&imagedata=public/img/fixed.jpg' % ACCESS_TOKEN)
+                    if r.status_code != 200:
+                        r = requests.get('https://upload.gyazo.com/api/upload?access_token=%s&imagedata=public/img/fixed.jpg' % ACCESS_TOKEN)
+
+                    if r.status_code == 200:
+                        json = r.json()
+                        img_url = json['url']
+                        imageToText(img_url)
+                except requests.exceptions.HTTPError:
+                    pass
+
 
         # Set Policy to collect images
         controller.set_policy(Leap.Controller.POLICY_IMAGES)
