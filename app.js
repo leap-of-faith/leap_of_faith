@@ -78,20 +78,39 @@ wss.on('connection', function(ws) {
 	console.log("user connected");
 	ws.on('message', function(message) {
 		console.log("Received Message: %s", message);
-		// Verify that enough time has passed to allow another photo
-		if((Date.now() - last_photo_trigger > PHOTO_DELAY))
-			if(message.substring(0, 6) == 'photo:') {
+
+		if(message.substring(0, 6) == 'photo:') {
+			// Verify that enough time has passed to allow another photo
+			if((Date.now() - last_photo_trigger > PHOTO_DELAY)) {
 				var photo_data = message.substring(6);
 				// The user triggered a photo event
 				console.log("Photo event triggered");
 				last_photo_trigger = Date.now();
 				// Notify the Leap to take a photo
-
-			} 
-			// else if(message.substring(0, 4) == 't2s:') {
-			// 	console.log('Text to speech web socket event triggered');
-			// 	var text = message.substring(4);
-			// }
+			}
+		} 
+		else if(message.substring(0, 8) == 'vibrate:') {
+			console.log('Vibration intensity error triggered');
+			var intensity = message.substring(8);
+			if(intensity != '') {
+				intensity = int(intensity)
+				// Send the vibration
+				console.log(intensity);
+				if(intensity > 15) {
+					// Trigger low intensity
+					broadcast('low');
+				}
+				else if(intensity > 5) {
+					// Trigger medium intensity
+					broadcast('med');
+				}
+				else if(intensity >= 0) {
+					// Trigger high intensity
+					broadcast('high');
+				}
+				// else no vibration triggered
+			}
+		}
 	});
 	ws.on('error', function(err) {
 		console.log("Websocket custom error: error occurred");
@@ -115,27 +134,27 @@ function broadcast(data) {
  */
 app.get('/', homeController.index);
 app.get('/t2s', homeController.t2s);
-app.get('/vibrate', function(req, res) {
-	var intensity = req.query.intensity;
-	if(intensity != undefined) {
-		// Send the vibration
-		console.log(intensity);
-		if(intensity > 15) {
-			// Trigger low intensity
-			broadcast('low');
-		}
-		else if(intensity > 5) {
-			// Trigger medium intensity
-			broadcast('med');
-		}
-		else if(intensity >= 0) {
-			// Trigger high intensity
-			broadcast('high');
-		}
-		// else no vibration triggered
-	}
-	res.render('index');
-});
+// app.get('/vibrate', function(req, res) {
+// 	var intensity = req.query.intensity;
+// 	if(intensity != undefined) {
+// 		// Send the vibration
+// 		console.log(intensity);
+// 		if(intensity > 15) {
+// 			// Trigger low intensity
+// 			broadcast('low');
+// 		}
+// 		else if(intensity > 5) {
+// 			// Trigger medium intensity
+// 			broadcast('med');
+// 		}
+// 		else if(intensity >= 0) {
+// 			// Trigger high intensity
+// 			broadcast('high');
+// 		}
+// 		// else no vibration triggered
+// 	}
+// 	res.render('index');
+// });
 
 /**
  * Error Handler.
