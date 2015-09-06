@@ -4,18 +4,24 @@ import ctypes
 import scipy.misc
 import requests
 import math
+from websocket import create_connection
 
 import Leap, sys, thread, time
 from Leap import CircleGesture, KeyTapGesture, ScreenTapGesture, SwipeGesture
 
-RANGE = 25  # 25cm max range of leap motion device
+RANGE = 25.0  # 25cm max range of leap motion device
+MAX_INTENSITY = 255.0  # max value of a pixel in a Leap Motion Frame Image
+variable = ""
 
 class SampleListener(Leap.Listener):
     pfobj = ''
     _count = 0
-    _threshold = .95 * RANGE  # The point at which an object will be considered in range of the leap
+    _threshold = .90 * RANGE  # The point at which an object will be considered in range of the leap
+    _ws = ""
 
     def on_init(self, controller):
+        # Establish websocket connection to Bluemix
+        self._ws = create_connection("ws://leap-of-faith.mybluemix.net/websocket")
         print "Initialized"
 
     def on_connect(self, controller):
@@ -26,11 +32,25 @@ class SampleListener(Leap.Listener):
         print "Disconnected"
 
     def on_exit(self, controller):
+        self._ws.close()
         print "Exited"
 
     def calc_distance(self, image_array):
         """Returns the average distance of items in the image from the leap"""
-        return (1 - np.mean(image_array)/255) * RANGE
+        """
+        #x_val = (1 - np.mean(image_array)/255) * 25
+        x_val = (np.mean(image_array)/255) * 25
+        #x_val = np.mean(image_array)
+        print "x is ", x_val
+              #((1)/(x+(1/255)))-(1/5)
+        val = x_val  # ((1.0)/(x_val+(1.0/25.0)))-(1.0/255.0)
+        #val = (1.0/(x_val+(1.0/MAX_INTENSITY)) - (1.0/RANGE))
+        print "mean is ", np.mean(image_array), "max is ", MAX_INTENSITY, "range is ", RANGE, "val is ", val
+        print "1/m ", 1.0/MAX_INTENSITY
+        print "1/r", 1.0/RANGE
+        print "1/(avg+(1/m)) ", (1.0/(np.mean(image_array)+(1.0/MAX_INTENSITY)))
+        """
+        return (1 - np.mean(image_array)/255) * 25
 
     def undistort(self, leap_image):  
         """Corrects for Leap Motion fisheye effect"""
@@ -112,7 +132,7 @@ class SampleListener(Leap.Listener):
             # buzz the watch as objects come into the range of the leap
             if dist < self._threshold:
                 # buzz the watch
-                print "watch buzz: power = ", int(dist)
+                self._ws.send('%d' % int(dist))
 
             # if watch_button_pressed: then submit image to bluemix
             watch_button_pressed = False
@@ -124,9 +144,10 @@ class SampleListener(Leap.Listener):
         # Set Policy to collect images
         controller.set_policy(Leap.Controller.POLICY_IMAGES)
 
-        print "Frame id: %d, timestamp: %d, hands: %d, fingers: %d, tools: %d, gestures: %d" % (
+        status = "Frame id: %d, timestamp: %d, hands: %d, fingers: %d, tools: %d, gestures: %d" % (
               frame.id, frame.timestamp, len(frame.hands), len(frame.fingers), len(frame.tools), len(frame.gestures()))
-
+        print status
+        #self._ws.send(status)
 
 def main():
     # Create a sample listener and controller
