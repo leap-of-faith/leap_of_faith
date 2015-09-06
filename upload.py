@@ -8,6 +8,15 @@ from random import random
 import unicodedata
 # import wolfram
 
+import urllib
+# from urllib import urlencode
+from urllib2 import urlopen
+import os
+import pyglet
+
+
+
+
 # Make sure to set your Wolfram App ID in the environment
 # WOLFRAM_APP_ID = os["WOLFRAM_APP_ID"]
 
@@ -26,7 +35,7 @@ class ImageData:
 		self.imageFaces = None
 
 	def __str__(self):
-		s = '\nImage: ' + self.img_location + ' is a ' + self.object + ' at ' + str(float(self.object_perc) * 100) + '% via ' + self.api + '.\n\n'
+		s = '\nImage: ' + self.img_location + ' is a ' + self.object if self.object else 'None' + ' at ' + str(float(self.object_perc if self.object_perc else 0) * 100) + '% via ' + self.api + '.\n\n'
 		s += '## Response Object ##\n'
 		s += json.dumps(self.response, indent=4)
  
@@ -62,7 +71,7 @@ def processImage(local_location):
 		# 			image_data = wolfram_image_data
 		
 		# Fetch face data if there is a person in the image
-		if(image_data != None and image_data.object.lower() == "person"):
+		if(image_data != None and image_data.object != None and image_data.object.lower() == "person"):
 			image_data = analyze_face(image_data)
 
 	return image_data
@@ -70,8 +79,8 @@ def processImage(local_location):
 # Wraps the object name from the image in a random sentence.
 # Returns a string
 def tagToSentence(image_data):
-	text = image_data.object;
-	if(len(image_data.imageFaces) > 0):
+	text = image_data.object if image_data != None else None;
+	if(image_data.imageFaces and len(image_data.imageFaces) > 0):
 		# It is a person and we have a face
 		
 		sentences = [];
@@ -89,7 +98,7 @@ def tagToSentence(image_data):
 					 'That looks like a positively wonderful {0}',
 					 'That would be a {0}.',
 					 'That looks like a tiger. Oh sorry, that is a {0}. My bad.'];
-		if(image_data.object == None):
+		if(text == None):
 			sentences = ["What an incredible...thing.", "That's a thing, for sure.", "One thing. Right ahead.", "I'm not answering your questions, you locked me in this bag."]
 		index = int(round(random() * (len(sentences) - 1)))
 		return sentences[index].format(str(text));
@@ -189,8 +198,25 @@ def imageToText(img_location):
 	print sentence
 	return sentence
 
+def playText(text):
+	filename = 'transcript.wav'
+	url = "http://leapoffaith.mybluemix.net/t2s?" + urlencode({"text": text}) + "&accept=audio%2Fwav&download=true"
+
+	urllib.urlretrieve (url, filename)
+
+	# pygame.init()
+	# song = pygame.mixer.Sound(filename)
+	# clock = pygame.time.Clock()
+	# song.play()
+	# while True:
+	#     clock.tick(60)
+	# pygame.quit()
+
+	os.system('play ' + filename)
 
 if __name__ == '__main__':
-	imageToText('./public/img/sean.jpg')
+	text = imageToText('./public/img/newapp-icon.png')
+	# text = imageToText('./public/img/macbook.jpg')
+	playText(text)
 
 

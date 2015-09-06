@@ -79,7 +79,7 @@ wss.on('connection', function(ws) {
 	ws.on('message', function(message) {
 		console.log("Received Message: %s", message);
 
-		if(message.substring(0, 6) == 'photo:') {
+		if(message.substring(0, 5) == 'photo') {
 			// Verify that enough time has passed to allow another photo
 			if((Date.now() - last_photo_trigger > PHOTO_DELAY)) {
 				var photo_data = message.substring(6);
@@ -91,17 +91,17 @@ wss.on('connection', function(ws) {
 			}
 		} 
 		else if(message.substring(0, 8) == 'vibrate:') {
-			console.log('Vibration intensity error triggered');
+			console.log('Vibration intensity event triggered');
 			var intensity = message.substring(8);
 			if(intensity != '') {
-				intensity = int(intensity)
+				intensity = parseInt(intensity)
 				// Send the vibration
 				console.log(intensity);
-				if(intensity > 15) {
+				if(intensity > 20) {
 					// Trigger low intensity
 					broadcast('low');
 				}
-				else if(intensity > 5) {
+				else if(intensity > 15) {
 					// Trigger medium intensity
 					broadcast('med');
 				}
@@ -126,7 +126,11 @@ wss.on('connection', function(ws) {
  */
 function broadcast(data) {
 	wss.clients.forEach(function each(client) {
-		client.send(data);
+		try {
+			client.send(data);
+		} catch(e) {
+			console.log("failed client send");
+		}
 	});
 };
 
