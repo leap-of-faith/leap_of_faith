@@ -3,17 +3,25 @@ import numpy as np
 import ctypes
 import scipy.misc
 import requests
+import math
+from websocket import create_connection
 
 import Leap, sys, thread, time
 from Leap import CircleGesture, KeyTapGesture, ScreenTapGesture, SwipeGesture
 
-RANGE = 25  # 25cm max range of leap motion device
+RANGE = 25.0  # 25cm max range of leap motion device
+MAX_INTENSITY = 255.0  # max value of a pixel in a Leap Motion Frame Image
+variable = ""
 
 class SampleListener(Leap.Listener):
     pfobj = ''
     _count = 0
+    _threshold = .90 * RANGE  # The point at which an object will be considered in range of the leap
+    _ws = ""
 
     def on_init(self, controller):
+        # Establish websocket connection to Bluemix
+        self._ws = create_connection("ws://leap-of-faith.mybluemix.net/websocket")
         print "Initialized"
 
     def on_connect(self, controller):
@@ -24,27 +32,90 @@ class SampleListener(Leap.Listener):
         print "Disconnected"
 
     def on_exit(self, controller):
+        self._ws.close()
         print "Exited"
 
     def calc_distance(self, image_array):
         """Returns the average distance of items in the image from the leap"""
-        return (1 - np.mean(image_array)/255) * RANGE
+        """
+        #x_val = (1 - np.mean(image_array)/255) * 25
+        x_val = (np.mean(image_array)/255) * 25
+        #x_val = np.mean(image_array)
+        print "x is ", x_val
+              #((1)/(x+(1/255)))-(1/5)
+        val = x_val  # ((1.0)/(x_val+(1.0/25.0)))-(1.0/255.0)
+        #val = (1.0/(x_val+(1.0/MAX_INTENSITY)) - (1.0/RANGE))
+        print "mean is ", np.mean(image_array), "max is ", MAX_INTENSITY, "range is ", RANGE, "val is ", val
+        print "1/m ", 1.0/MAX_INTENSITY
+        print "1/r", 1.0/RANGE
+        print "1/(avg+(1/m)) ", (1.0/(np.mean(image_array)+(1.0/MAX_INTENSITY)))
+        """
+        return (1 - np.mean(image_array)/255) * 25
 
+    def undistort(self, leap_image):  
+        """Corrects for Leap Motion fisheye effect"""
+        raw = leap_image.data
+        distortion_buffer = leap_image.distortion
+        distortion_width = leap_image.distortion_width
+        width = leap_image.width
+        height = leap_image.height
+
+        corrected_width = 320
+        corrected_height = 120
+        corrected = np.empty((corrected_width, corrected_height), dtype=np.ubyte)
+
+        for i in range(0, corrected_width):
+            for j in range(0, corrected_height):
+                # Calculate position in the calibration map
+                calibrationX = 63.0 * i / corrected_width
+                calibrationY = 62.0 * (1.0 - (j* 1.0)/corrected_height)
+
+                # Fractional part to be used as weighting in bilinear interpolation
+                weightX = calibrationX - math.trunc(calibrationX)
+                weightY = calibrationY - math.trunc(calibrationY)
+
+                # Get x,y coordinates of the closest calibration map points to the target pixel
+                x1 = math.trunc(calibrationX)
+                y1 = math.trunc(calibrationY)
+                x2 = x1 + 1
+                y2 = y1 + 1
+
+                # Find x,y grid coordinates from distortion buffer
+                dX1 = distortion_buffer[x1 * 2 + y1 * distortion_width]
+                dX2 = distortion_buffer[x2 * 2 + y1 * distortion_width]
+                dX3 = distortion_buffer[x1 * 2 + y2 * distortion_width]
+                dX4 = distortion_buffer[x2 * 2 + y2 * distortion_width]
+                dY1 = distortion_buffer[x1 * 2 + y1 * distortion_width + 1]
+                dY2 = distortion_buffer[x2 * 2 + y1 * distortion_width + 1]
+                dY3 = distortion_buffer[x1 * 2 + y2 * distortion_width + 1]
+                dY4 = distortion_buffer[x2 * 2 + y2 * distortion_width + 1]
+
+                # Bilinear Interpolation of target pixel
+                dX = dX1*(1.0 - weightX)*(1.0 - weightY) + dX2*weightX*(1.0 - weightY) + dX3*(1.0 - weightX)*weightY + dX4*weightX*weightY
+                dY = dY1*(1.0 - weightX)*(1.0 - weightY) + dY2*weightX*(1.0 - weightY) + dY3*(1.0 - weightX)*weightY + dY4*weightX*weightY
+
+                #print "i,j ", i, j, " cal x,Y ", calibrationX, calibrationY, " weightX,Y ", weightX, weightY, " dX,Y ", dX, dY
+
+                # Reject points outside [0..1]
+                if dX>=0 and dX<=1 and dY>=0 and dY<=1:
+                    # Denormalise points from [0..1] to [0..width] or [0..height]
+                    denormalisedX = math.trunc(dX * width)
+                    denormalisedY = math.trunc(dY * height)
+                    corrected[i,j] = raw[denormalisedX + denormalisedY * width]
+                else:
+                    corrected[i,j] = 0
+
+        corrected_image = Image.fromarray(corrected, 'L')
+        return corrected_image
         
     def on_frame(self, controller):
+        """Process a Leap Motion frame"""
         # Get the most recent frame and report some basic information
         frame = controller.frame() 
 
-        # Get Images
-        print len(frame.images)
-        print len(controller.images)
+        # Get the two images that make up the frame (left camera, right camera)
         for index in range(len(frame.images)):
             image = frame.images[index]
-            print image
-            print "height: ", image.distortion_height
-            #imagedata = ctypes.cast(leap_image.data.cast().__long__(), ctypes.POINTER(leap_image.width * leap_image.height * ctypes.c_ubyte)).contents
-            #image = np.frombuffer(imagedata, dtype = 'uint8')
-            #image.shape = (image.height, image.width)
             image_buffer_ptr = image.data_pointer
             ctype_array_def = ctypes.c_ubyte * image.width * image.height
 
@@ -53,27 +124,30 @@ class SampleListener(Leap.Listener):
             # as numpy array
             image_array = np.ctypeslib.as_array(as_ctype_array)
 
-            print "avg: ", np.mean(image_array), ", max: ",  np.amax(image_array), ", min: ", np.amin(image_array), ", dist:", self.calc_distance(image_array)
-            # if distance < threshold: then buzz watch
+            dist = self.calc_distance(image_array)  # distance of object from the leap motion
+
+            # print some stats
+            #print "avg: ", np.mean(image_array), ", max: ",  np.amax(image_array), ", min: ", np.amin(image_array), ", dist:", dist
+
+            # buzz the watch as objects come into the range of the leap
+            if dist < self._threshold:
+                # buzz the watch
+                self._ws.send('%d' % int(dist))
+
             # if watch_button_pressed: then submit image to bluemix
-            """
-            scipy.misc.toimage(image_array, cmin=0.0, cmax=1.0).save('outfile.jpg')
-            exit(0)
-                image = 'outfile.jpg'
-                data = open('./public/img/' + image, 'rb').read()
-                res = requests.post(url='http://leap-of-faith.mybluemix.net/processImage',
-                                    data=data,
-                                    headers={'Content-Type': 'image/jpeg'})
-            """
-        # Get Images
+            watch_button_pressed = False
+            
+            if watch_button_pressed == True:
+                print "watch button pressed!"
+                self.undistort(image).save('fixed.jpg')
+
+        # Set Policy to collect images
         controller.set_policy(Leap.Controller.POLICY_IMAGES)
-        #print "bg frame policy: ", Leap.Controller.POLICY_BACKGROUND_FRAMES
-        #print "images policy: ", Leap.Controller.POLICY_IMAGES
-        #print "optimize hmd policy: ", Leap.Controller.POLICY_OPTIMIZE_HMD
 
-        print "Frame id: %d, timestamp: %d, hands: %d, fingers: %d, tools: %d, gestures: %d" % (
+        status = "Frame id: %d, timestamp: %d, hands: %d, fingers: %d, tools: %d, gestures: %d" % (
               frame.id, frame.timestamp, len(frame.hands), len(frame.fingers), len(frame.tools), len(frame.gestures()))
-
+        print status
+        #self._ws.send(status)
 
 def main():
     # Create a sample listener and controller
@@ -87,10 +161,13 @@ def main():
     print "Press Enter to quit..."
     try:
         sys.stdin.readline()
+        print "rdline"
     except KeyboardInterrupt:
+        print "kbd interupt"
         pass
     finally:
         # Remove the sample listener when done
+        print "finally"
         controller.remove_listener(listener)
 
 
