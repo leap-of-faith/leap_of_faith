@@ -34,17 +34,23 @@ class ImageData:
 		s += '\n'
 		return s
 
+# Takes in a local location in the file system
+# Outputs a remote url from the internet where the image is hosted
+def getRemoteUrl(local_location):
+	pass # Todo @Anthony
+
 # Runs an image through image processing APIs 
 # Returns an ImageData object
-def processImage(img_location):
+def processImage(local_location):
 	image_data = None
-	if(img_location):
+	if(local_location):
 		# Now process this image with Alchemy
-		image_data = alchemy_processImage(img_location)
+		image_data = alchemy_processImage(local_location, type='image')
 		# Check if we need to get Wolfram data
 		if(image_data == None or float(image_data.object_perc) < ALCHEMY_MIN_PERC):
 			print 'Fetching data from Wolfram (', image_data.object_perc if image_data != None else 'None', ')'
-			wolfram_image_data = wolfram_processImage(img_location)
+			remote_url_location = getRemoteUrl(local_location);
+			wolfram_image_data = wolfram_processImage(remote_url_location)
 			if(wolfram_image_data != None):
 				if(image_data == None or float(image_data.object_perc) > float(wolfram_image_data.object_perc)): 
 					image_data = wolfram_image_data

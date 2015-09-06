@@ -77,15 +77,21 @@ var PHOTO_DELAY = 200; //ms
 wss.on('connection', function(ws) {
 	console.log("user connected");
 	ws.on('message', function(message) {
-		console.log("Received %s", message);
+		console.log("Received Message: %s", message);
 		// Verify that enough time has passed to allow another photo
 		if((Date.now() - last_photo_trigger > PHOTO_DELAY))
-			if(message == 'photo') {
+			if(message.substring(0, 6) == 'photo:') {
+				var photo_data = message.substring(6);
 				// The user triggered a photo event
 				console.log("Photo event triggered");
-				// Notify the Leap to take a photo
 				last_photo_trigger = Date.now();
-			}
+				// Notify the Leap to take a photo
+
+			} 
+			// else if(message.substring(0, 4) == 't2s:') {
+			// 	console.log('Text to speech web socket event triggered');
+			// 	var text = message.substring(4);
+			// }
 	});
 	ws.on('error', function(err) {
 		console.log("Websocket custom error: error occurred");
