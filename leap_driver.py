@@ -33,8 +33,8 @@ class SampleListener(Leap.Listener):
         return (1 - np.mean(image_array)/255) * RANGE
 
     def undistort(self, leap_image):  
+        """Corrects for Leap Motion fisheye effect"""
         raw = leap_image.data
-        #distortion_buffer = fake_distortion() #leap_image.distortion
         distortion_buffer = leap_image.distortion
         distortion_width = leap_image.distortion_width
         width = leap_image.width
@@ -89,19 +89,13 @@ class SampleListener(Leap.Listener):
         return corrected_image
         
     def on_frame(self, controller):
+        """Process a Leap Motion frame"""
         # Get the most recent frame and report some basic information
         frame = controller.frame() 
 
-        # Get Images
-        print len(frame.images)
-        print len(controller.images)
+        # Get the two images that make up the frame (left camera, right camera)
         for index in range(len(frame.images)):
             image = frame.images[index]
-            print image
-            print "height: ", image.distortion_height
-            #imagedata = ctypes.cast(leap_image.data.cast().__long__(), ctypes.POINTER(leap_image.width * leap_image.height * ctypes.c_ubyte)).contents
-            #image = np.frombuffer(imagedata, dtype = 'uint8')
-            #image.shape = (image.height, image.width)
             image_buffer_ptr = image.data_pointer
             ctype_array_def = ctypes.c_ubyte * image.width * image.height
 
@@ -113,7 +107,7 @@ class SampleListener(Leap.Listener):
             dist = self.calc_distance(image_array)  # distance of object from the leap motion
 
             # print some stats
-            print "avg: ", np.mean(image_array), ", max: ",  np.amax(image_array), ", min: ", np.amin(image_array), ", dist:", dist
+            #print "avg: ", np.mean(image_array), ", max: ",  np.amax(image_array), ", min: ", np.amin(image_array), ", dist:", dist
 
             # buzz the watch as objects come into the range of the leap
             if dist < self._threshold:
@@ -127,20 +121,8 @@ class SampleListener(Leap.Listener):
                 print "watch button pressed!"
                 self.undistort(image).save('fixed.jpg')
 
-            """
-            scipy.misc.toimage(image_array, cmin=0.0, cmax=1.0).save('outfile.jpg')
-            exit(0)
-                image = 'outfile.jpg'
-                data = open('./public/img/' + image, 'rb').read()
-                res = requests.post(url='http://leap-of-faith.mybluemix.net/processImage',
-                                    data=data,
-                                    headers={'Content-Type': 'image/jpeg'})
-            """
-        # Get Images
+        # Set Policy to collect images
         controller.set_policy(Leap.Controller.POLICY_IMAGES)
-        #print "bg frame policy: ", Leap.Controller.POLICY_BACKGROUND_FRAMES
-        #print "images policy: ", Leap.Controller.POLICY_IMAGES
-        #print "optimize hmd policy: ", Leap.Controller.POLICY_OPTIMIZE_HMD
 
         print "Frame id: %d, timestamp: %d, hands: %d, fingers: %d, tools: %d, gestures: %d" % (
               frame.id, frame.timestamp, len(frame.hands), len(frame.fingers), len(frame.tools), len(frame.gestures()))
