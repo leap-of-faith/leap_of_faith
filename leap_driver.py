@@ -7,6 +7,7 @@ import math
 from websocket import create_connection
 from upload import imageToText
 import requests
+from os import system
 
 import Leap, sys, thread, time
 from Leap import CircleGesture, KeyTapGesture, ScreenTapGesture, SwipeGesture
@@ -31,10 +32,10 @@ class SampleListener(Leap.Listener):
 
     def on_disconnect(self, controller):
         # Note: not dispatched when running in a debugger.
+        self._ws.close()
         print "Disconnected"
 
     def on_exit(self, controller):
-        self._ws.close()
         print "Exited"
 
     def calc_distance(self, image_array):
@@ -113,10 +114,12 @@ class SampleListener(Leap.Listener):
     def on_frame(self, controller):
         """Process a Leap Motion frame"""
         # Get the most recent frame and report some basic information
+        print "on frame"
         frame = controller.frame() 
 
         # Get the two images that make up the frame (left camera, right camera)
         for index in range(len(frame.images)):
+            print "frame_images"
             image = frame.images[index]
             image_buffer_ptr = image.data_pointer
             ctype_array_def = ctypes.c_ubyte * image.width * image.height
@@ -134,27 +137,20 @@ class SampleListener(Leap.Listener):
             # buzz the watch as objects come into the range of the leap
             if dist < self._threshold:
                 # buzz the watch
+                print "buzzing watch"
                 self._ws.send('%d' % int(dist))
 
             # if watch_button_pressed: then submit image to bluemix
-            web_socket_data = self._ws.recv()
+            #web_socket_data = self._ws.recv()
+            web_socket_data = "l"
             if "photoL" in web_socket_data:
                 print "watch button pressed!"
                 self.undistort(image).save('public/img/fixed.jpg')
                 # Make HTTP GET request to Gyazo api
-                try:
-                    r = requests.get('https://upload.gyazo.com/api/upload?access_token=%s&imagedata=public/img/fixed.jpg' % ACCESS_TOKEN)
-                    if r.status_code != 200:
-                        r = requests.get('https://upload.gyazo.com/api/upload?access_token=%s&imagedata=public/img/fixed.jpg' % ACCESS_TOKEN)
+                val = system('curl -i https://upload.gyazo.com/api/upload -F "access_token=c8d43238b11963ae3033ea4a1d3af0b1de141f4d3d3116a299786b4e87eea8f1" -F "imagedata=@/home/anthony/Desktop/PennAppsF15/leap_processing/public/img/fixed.jpg"')
+                print val
 
-                    if r.status_code == 200:
-                        json = r.json()
-                        img_url = json['url']
-                        imageToText(img_url)
-                except requests.exceptions.HTTPError:
-                    pass
-
-
+        print "set policy"
         # Set Policy to collect images
         controller.set_policy(Leap.Controller.POLICY_IMAGES)
 
