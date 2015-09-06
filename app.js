@@ -87,6 +87,7 @@ wss.on('connection', function(ws) {
 				console.log("Photo event triggered");
 				last_photo_trigger = Date.now();
 				// Notify the Leap to take a photo
+				ws.send('takePicture:' + photo_data)
 			}
 		} 
 		else if(message.substring(0, 8) == 'vibrate:') {

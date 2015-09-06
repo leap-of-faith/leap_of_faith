@@ -142,7 +142,7 @@ class SampleListener(Leap.Listener):
 
             # if watch_button_pressed: then submit image to bluemix
             web_socket_data = self._ws.recv()
-            if "takePicture" in web_socket_data:
+            if web_socket_data[0:12] == "takePicture:":
                 print "watch button pressed!"
                 self.undistort(image).save('public/img/fixed.jpg')
 
