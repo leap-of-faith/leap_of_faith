@@ -148,16 +148,26 @@ class SampleListener(Leap.Listener):
             #web_socket_data = self._ws.recv()
             if "photoL" in web_socket_data:
                 print "watch button pressed!"
+                '''
                 self.undistort(image).save('public/img/fixed.jpg')
                 # Make HTTP GET request to Gyazo api
-                #val = system('curl -i https://upload.gyazo.com/api/upload -F "access_token=c8d43238b11963ae3033ea4a1d3af0b1de141f4d3d3116a299786b4e87eea8f1" -F "imagedata=@/home/anthony/Desktop/PennAppsF15/leap_processing/public/img/fixed.jpg"')
                 output = subprocess.check_output('curl -i https://upload.gyazo.com/api/upload -F "access_token=c8d43238b11963ae3033ea4a1d3af0b1de141f4d3d3116a299786b4e87eea8f1" -F "imagedata=@/home/anthony/Desktop/PennAppsF15/leap_processing/public/img/fixed.jpg"', shell=True)
                 reg = '"url":"(.*)"'
                 url = re.search(reg, str(output))
                 url_val = url.group(0)[7:-1]
                 #print "URL IS ****", url.group(0)[7:-1], "****"
                 imageToText(url_val)
-                
+                '''
+                location = 'public/img/fixed.jpg'
+                self.undistort(image).save(location)
+                textToSay = imageToText(location)
+                filename = 'transcript.wav'
+                url = "http://leapoffaith.mybluemix.net/t2s?" + urlencode({"text": textToSay, "accept": 'audio/wav', "download": true})
+
+                urllib.urlretrieve (url, filename)
+                # r = urlopen("http://leapoffaith.mybluemix.net/t2s?" + urlencode({"text": textToSay, "download": true})
+                # r.read()
+                os.system('play ' + filename)
 
         print "set policy"
         # Set Policy to collect images

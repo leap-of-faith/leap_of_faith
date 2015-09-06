@@ -33,7 +33,7 @@ exports.t2s = function(req, res) {
 	
 	transcript.on('response', function(response) {
 		if (req.query.download) {
-			response.headers['content-disposition'] = 'attachment; filename=transcript.ogg';
+			response.headers['content-disposition'] = 'attachment; filename=transcript.wav';
 		}
 	});
 	
