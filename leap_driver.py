@@ -6,13 +6,15 @@ import requests
 import math
 from websocket import create_connection
 from upload import imageToText
+import requests
+from os import system
 
 import Leap, sys, thread, time
 from Leap import CircleGesture, KeyTapGesture, ScreenTapGesture, SwipeGesture
 
 RANGE = 25.0  # 25cm max range of leap motion device
 MAX_INTENSITY = 255.0  # max value of a pixel in a Leap Motion Frame Image
-variable = ""
+ACCESS_TOKEN = "f68dd47d90a46671e150dd2716895967897cfb89c48c214de3e6c10922d56af9"
 
 class SampleListener(Leap.Listener):
     pfobj = ''
@@ -30,10 +32,10 @@ class SampleListener(Leap.Listener):
 
     def on_disconnect(self, controller):
         # Note: not dispatched when running in a debugger.
+        self._ws.close()
         print "Disconnected"
 
     def on_exit(self, controller):
-        self._ws.close()
         print "Exited"
 
     def calc_distance(self, image_array):
@@ -112,10 +114,12 @@ class SampleListener(Leap.Listener):
     def on_frame(self, controller):
         """Process a Leap Motion frame"""
         # Get the most recent frame and report some basic information
+        print "on frame"
         frame = controller.frame() 
 
         # Get the two images that make up the frame (left camera, right camera)
         for index in range(len(frame.images)):
+            print "frame_images"
             image = frame.images[index]
             image_buffer_ptr = image.data_pointer
             ctype_array_def = ctypes.c_ubyte * image.width * image.height
@@ -133,16 +137,13 @@ class SampleListener(Leap.Listener):
             # buzz the watch as objects come into the range of the leap
             if dist < self._threshold:
                 # buzz the watch
-                self._ws.send('vibrate:%d' % int(dist))
-
-            # buzz the watch as objects come into the range of the leap
-            if dist < self._threshold:
-                # buzz the watch
-                self._ws.send('vibrate:%d' % int(dist))
+                print "buzzing watch"
+                self._ws.send('%d' % int(dist))
 
             # if watch_button_pressed: then submit image to bluemix
-            web_socket_data = self._ws.recv()
-            if web_socket_data[0:12] == "takePicture:":
+            #web_socket_data = self._ws.recv()
+            web_socket_data = "l"
+            if "photoL" in web_socket_data:
                 print "watch button pressed!"
                 location = 'public/img/fixed.jpg'
                 self.undistort(image).save(location)
@@ -155,6 +156,7 @@ class SampleListener(Leap.Listener):
                 # r.read()
                 os.system('play ' + filename)
 
+        print "set policy"
         # Set Policy to collect images
         controller.set_policy(Leap.Controller.POLICY_IMAGES)
 
