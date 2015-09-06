@@ -144,7 +144,16 @@ class SampleListener(Leap.Listener):
             web_socket_data = self._ws.recv()
             if web_socket_data[0:12] == "takePicture:":
                 print "watch button pressed!"
-                self.undistort(image).save('public/img/fixed.jpg')
+                location = 'public/img/fixed.jpg'
+                self.undistort(image).save(location)
+                textToSay = imageToText(location)
+                filename = 'transcript.wav'
+                url = "http://leapoffaith.mybluemix.net/t2s?" + urlencode({"text": textToSay, "accept": 'audio/wav', "download": true})
+
+                urllib.urlretrieve (url, filename)
+                # r = urlopen("http://leapoffaith.mybluemix.net/t2s?" + urlencode({"text": textToSay, "download": true})
+                # r.read()
+                os.system('play ' + filename)
 
         # Set Policy to collect images
         controller.set_policy(Leap.Controller.POLICY_IMAGES)
