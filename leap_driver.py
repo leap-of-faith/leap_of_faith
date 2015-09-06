@@ -135,9 +135,17 @@ class SampleListener(Leap.Listener):
                 # buzz the watch
                 self._ws.send('%d' % int(dist))
 
+            # buzz the watch as objects come into the range of the leap
+            if dist < self._threshold:
+                # buzz the watch
+                self._ws.send('%d' % int(dist))
+
             # if watch_button_pressed: then submit image to bluemix
             watch_button_pressed = False
-            
+            web_socket_data = self._ws.recv()
+            if "takePicture" in web_socket_data:
+                watch_button_pressed = True
+
             if watch_button_pressed == True:
                 print "watch button pressed!"
                 self.undistort(image).save('fixed.jpg')
