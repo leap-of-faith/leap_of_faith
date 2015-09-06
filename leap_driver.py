@@ -144,7 +144,7 @@ class SampleListener(Leap.Listener):
             web_socket_data = self._ws.recv()
             if "takePicture" in web_socket_data:
                 print "watch button pressed!"
-                self.undistort(image).save('fixed.jpg')
+                self.undistort(image).save('public/img/fixed.jpg')
 
         # Set Policy to collect images
         controller.set_policy(Leap.Controller.POLICY_IMAGES)
