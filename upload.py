@@ -2,6 +2,10 @@ import requests
 import os
 from alchemyapi_python.alchemyapi import AlchemyAPI
 import json
+# import wolfram
+
+# Make sure to set your Wolfram App ID in the environment
+# WOLFRAM_APP_ID = os["WOLFRAM_APP_ID"]
 
 # Minimum percent match for top tag to be used (over Wolfram)
 ALCHEMY_MIN_PERC = .6
@@ -59,14 +63,14 @@ def alchemy_processImage(img_location):
 # Processes the image using the Wolfram API
 # Return an ImageData object
 def wolfram_processImage(img_location):
-	res = requests.post(
-		url='http://leap-of-faith.mybluemix.net/processImage',
-		data=data,
-		headers={'Content-Type': 'image/jpeg'}
-	)
+
+	wolfram_client = wolframalpha.Client(WOLFRAM_APP_ID)
+
+
+
 	return ImageData('', 'wolfram', None)
 	
 
-image_data = processImage('./public/img/anthony.jpg')
+image_data = alchemy_processImage('./public/img/anthony.jpg')
 print image_data
 
