@@ -51,7 +51,7 @@ def processImage(img_location):
 		
 		# Fetch face data if there is a person in the image
 		if(image_data != None and image_data.object.lower() == "person"):
-			pass # Todo
+			image_data = analyze_face(image_data)
 
 	return image_data
 
@@ -61,7 +61,7 @@ def tagToSentence(image_data):
 	text = image_data.object;
 	sentences = ['A {0} is in your proximity.',
 				 'Holy moly, is that a {0}?'];
-	index = int(round(random() * len(sentences)))
+	index = int(round(random() * (len(sentences) - 1)))
 	return sentences[index].format(str(text));
 
 # Processes an image using the Alchemy API
@@ -88,8 +88,8 @@ def alchemy_processImage(img_location, type = 'url'):
 # Processes an image with a person in it and attempts to return 
 # information on the age and gender of the person
 # Returns a dictionary of data
-def analyze_face(img_location):
-	return None
+def analyze_face(image_data):
+	return image_data
 
 
 class WolframCloud:
@@ -135,12 +135,10 @@ def wolfram_processImage(img_location):
 def imageToText(img_location):
 	image_data = processImage(img_location)
 	sentence = tagToSentence(image_data)
-	# Pass the sentence to be read to the Bluemix server
-	
+	return sentence
+
 
 if __name__ == '__main__':
-	image_data = processImage('http://leapoffaith.mybluemix.net/img/boy.jpg')
-	print image_data
-	print tagToSentence(image_data)
+	imageToText('http://leapoffaith.mybluemix.net/img/boy.jpg')
 
 

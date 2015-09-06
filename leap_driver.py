@@ -5,6 +5,7 @@ import scipy.misc
 import requests
 import math
 from websocket import create_connection
+from upload import imageToText
 
 import Leap, sys, thread, time
 from Leap import CircleGesture, KeyTapGesture, ScreenTapGesture, SwipeGesture

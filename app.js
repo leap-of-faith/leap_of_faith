@@ -109,7 +109,6 @@ function broadcast(data) {
  */
 app.get('/', homeController.index);
 app.get('/t2s', homeController.t2s);
-app.post('/processImage', homeController.processImage);
 app.get('/vibrate', function(req, res) {
 	var intensity = req.query.intensity;
 	if(intensity != undefined) {
