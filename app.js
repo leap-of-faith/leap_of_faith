@@ -71,66 +71,37 @@ app.use(express.static(path.join(__dirname, 'public'), { maxAge: 31557600000 }))
  * https://github.com/geek/pebble-socket-example
  */
 var webSockets = [];
-// var server = new Hapi.Server();
-// var port = process.env.VCAP_APP_PORT || 8888;
-// server.connection({
-// 	host: 'localhost',
-// 	port: port
-// });
-
-wss.on("open", function(ev) {
-	// ev?
-	console.log("web socket opened");
-});
+var last_photo_trigger = 0;
+var PHOTO_DELAY = 200; //ms
 
 wss.on('connection', function(ws) {
 	console.log("user connected");
 	ws.on('message', function(message) {
 		console.log("Received %s", message);
+		// Verify that enough time has passed to allow another photo
+		if((Date.now() - last_photo_trigger > PHOTO_DELAY))
+			if(message == 'photo') {
+				// The user triggered a photo event
+				console.log("Photo event triggered");
+				// Notify the Leap to take a photo
+				last_photo_trigger = Date.now();
+			}
 	});
-
-	ws.send('Hi Sean');
+	ws.on('error', function(err) {
+		console.log("Websocket custom error: error occurred");
+		console.log(err);
+	});
+	// Notify Pebble's of connection
+	ws.send('Connected to Bluemix');
 });
 
-// server.start(function () {
-// 	console.log("server started on port " + port);
-//     var ws = new Ws.Server({ server: server.listener });
-//     console.log("websocket setup");
-//     ws.on('open', function() {
-//     	console.log("websocket opened");
-//     });
-//     ws.on('connection', function (socket) {
-//     	console.log("connection made");
-//         socket.send('Welcome');
-//     });
-//     ws.on('message', function(socket) {
-//     	console.log("message received");
-//     	socket.send("Received Message");
-//     });
-
-//     webSockets.push(ws);
-// });
-
 /**
- * Use to transmit data to Pebble
+ * Use to broadcast data to Pebble
  */
-var transmit = function (data) {
-    try {
-        webSockets.forEach(function (ws) {
-
-            if (!ws || !ws.clients) {
-                return;
-            }
-
-            for (var i = 0, il = ws.clients.length; i < il; ++i) {
-                var client = ws.clients[i];
-                if (client && client.send) {
-                    client.send(data.toString());
-                }
-            }
-        });
-    }
-    catch (err) {}
+function broadcast(data) {
+	wss.clients.forEach(function each(client) {
+		client.send(data);
+	});
 };
 
 /**
@@ -144,7 +115,19 @@ app.get('/vibrate', function(req, res) {
 	if(intensity != undefined) {
 		// Send the vibration
 		console.log(intensity);
-		transmit(intensity);
+		if(intensity > 15) {
+			// Trigger low intensity
+			broadcast('low');
+		}
+		else if(intensity > 5) {
+			// Trigger medium intensity
+			broadcast('med');
+		}
+		else if(intensity >= 0) {
+			// Trigger high intensity
+			broadcast('high');
+		}
+		// else no vibration triggered
 	}
 	res.render('index');
 });
