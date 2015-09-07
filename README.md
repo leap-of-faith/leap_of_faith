@@ -6,7 +6,7 @@ aka we can't think of good hackathon names
 
 
 # TLDR
-Leap Motion + Python + IBM Bluemix + Wolfram Cloud + Node.JS + Pebble
+Leap Motion + Python + IBM Bluemix + Wolfram Cloud + Node.JS + Pebble = Helping blind people see
 
 # Demo
 
