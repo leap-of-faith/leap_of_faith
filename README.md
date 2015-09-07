@@ -2,8 +2,15 @@
 # FeelVision (aka "Leap" of Faith)
 aka we can't think of good hackathon names
 
+![alt text](https://raw.githubusercontent.com/leap-of-faith/leap_of_faith/master/public/img/sean_dancing.jpg "Such dance skills. Much 90s.")
+
+
 # TLDR
 Leap Motion + Python + IBM Bluemix + Wolfram Cloud + Node.JS + Pebble
+
+# Demo
+
+Bluemix image processing demo: https://youtu.be/epSx9_eQhzI
 
 # How it works
 
