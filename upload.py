@@ -6,6 +6,7 @@ from urllib import urlencode
 from urllib2 import urlopen
 from random import random
 import unicodedata
+import sys
 # import wolfram
 
 import urllib
@@ -202,21 +203,19 @@ def playText(text):
 	filename = 'transcript.wav'
 	url = "http://leapoffaith.mybluemix.net/t2s?" + urlencode({"text": text}) + "&accept=audio%2Fwav&download=true"
 
-	urllib.urlretrieve (url, filename)
-
-	# pygame.init()
-	# song = pygame.mixer.Sound(filename)
-	# clock = pygame.time.Clock()
-	# song.play()
-	# while True:
-	#     clock.tick(60)
-	# pygame.quit()
+	urllib.urlretrieve(url, filename)
 
 	os.system('play ' + filename)
 
 if __name__ == '__main__':
-	text = imageToText('./public/img/newapp-icon.png')
-	# text = imageToText('./public/img/macbook.jpg')
+	# Choose the image to convert
+	image = './public/img/fixed.jpg'
+	if len(sys.argv) > 1:
+		image = './public/img/' + sys.argv[1]
+	print 'Processing image from: ' + image
+	# Convert the following image into a text description
+	text = imageToText(image)
+	# Convert the text description into speech and play it
 	playText(text)
 
 
